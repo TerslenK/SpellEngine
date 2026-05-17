@@ -3,7 +3,6 @@ package io.github.terslenk.spellengine.basic
 import io.github.terslenk.spellengine.core.SpellContext
 import io.github.terslenk.spellengine.core.SpellResult
 import io.github.terslenk.spellengine.item.SpellKeys
-import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Snowball
 import org.bukkit.persistence.PersistentDataType
 
@@ -35,9 +34,9 @@ object RayShape : Shape {
 
     override fun resolveTargets(ctx: SpellContext): SpellResult {
         val ray = ctx.caster.rayTraceEntities(MAX_DISTANCE)
-            ?: return SpellResult.Mishap("No entity is in your line of sight within ${MAX_DISTANCE.toInt()} blocks.")
+            ?: return SpellResult.Mishap("No entity is in your line of sight within $MAX_DISTANCE blocks.")
 
-        val hit = ray.hitEntity as? LivingEntity
+        val hit = ray.hitEntity
             ?: return SpellResult.Mishap("The ray hit something, but it wasn't a living entity.")
 
         ctx.targets.add(hit)
@@ -59,7 +58,6 @@ object AreaShape : Shape {
     override fun resolveTargets(ctx: SpellContext): SpellResult {
         val nearby = ctx.caster
             .getNearbyEntities(RADIUS, RADIUS, RADIUS)
-            .filterIsInstance<LivingEntity>()
             .filter { it != ctx.caster }
 
         if (nearby.isEmpty()) {
@@ -99,3 +97,5 @@ object ProjectileShape : Shape {
         return SpellResult.Success // listener will finish the job
     }
 }
+
+

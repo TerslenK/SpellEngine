@@ -10,11 +10,12 @@ import org.bukkit.entity.Entity
  * Mutable parameters that modifiers can tweak before an effect runs.
  */
 data class BasicSpellParams(
-    val power: Double   = 1.0,   // damage / heal multiplier
-    val radius: Double  = 5.0,   // used by AoE modifier
-    val duration: Int   = 60,    // ticks; used by Ignite / Extend
-    val aoe: Boolean    = false,  // whether to splash around each target
-    val pierce: Boolean = false   // projectile passes through entities
+    val power: Double = 1.0,
+    val duration: Int = 100, // ticks
+    val aoe: Boolean = false,
+    val radius: Double = 3.0,
+    val pierce: Boolean = false,
+    val targetType: String = "ALL" // "ALL", "LIVING", "ITEM"
 )
 
 // ─── Shape ───────────────────────────────────────────────────────────────────
@@ -62,3 +63,4 @@ interface Modifier {
 
     fun modify(params: BasicSpellParams): BasicSpellParams
 }
+

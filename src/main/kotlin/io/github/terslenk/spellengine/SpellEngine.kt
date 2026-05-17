@@ -5,3 +5,6 @@ import xyz.xenondevs.nova.addon.Addon
 object SpellEngine : Addon() {
     
 }
+
+
+

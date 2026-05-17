@@ -74,3 +74,4 @@ object AbsInstruction : AdvancedInstruction {
         return SpellResult.Success
     }
 }
+

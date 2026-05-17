@@ -1,44 +1,9 @@
 package io.github.terslenk.spellengine.core.registry
 
-import io.github.terslenk.spellengine.advanced.instructions.DamageEntityInstruction
-import io.github.terslenk.spellengine.advanced.instructions.GetCasterInstruction
-import io.github.terslenk.spellengine.advanced.instructions.GetEntityPosInstruction
-import io.github.terslenk.spellengine.advanced.instructions.GetLookedAtEntityInstruction
-import io.github.terslenk.spellengine.advanced.instructions.HealEntityInstruction
-import io.github.terslenk.spellengine.advanced.instructions.TeleportEntityInstruction
-import io.github.terslenk.spellengine.advanced.instructions.AbsInstruction
-import io.github.terslenk.spellengine.advanced.instructions.AddInstruction
-import io.github.terslenk.spellengine.advanced.instructions.DivideInstruction
-import io.github.terslenk.spellengine.advanced.instructions.MultiplyInstruction
-import io.github.terslenk.spellengine.advanced.instructions.SubtractInstruction
-import io.github.terslenk.spellengine.advanced.instructions.DropInstruction
-import io.github.terslenk.spellengine.advanced.instructions.DupInstruction
-import io.github.terslenk.spellengine.advanced.instructions.SwapInstruction
-import io.github.terslenk.spellengine.advanced.instructions.CardinalDirection
-import io.github.terslenk.spellengine.advanced.instructions.ExplodeInstruction
-import io.github.terslenk.spellengine.advanced.instructions.GetLookDirectionInstruction
-import io.github.terslenk.spellengine.advanced.instructions.OffsetVectorInstruction
-import io.github.terslenk.spellengine.advanced.instructions.PushVectorInstruction
-import io.github.terslenk.spellengine.advanced.instructions.ScaleVectorInstruction
-import io.github.terslenk.spellengine.basic.DamageEffect
-import io.github.terslenk.spellengine.basic.HealEffect
-import io.github.terslenk.spellengine.basic.IgniteEffect
-import io.github.terslenk.spellengine.basic.PushEffect
-import io.github.terslenk.spellengine.basic.TeleportEffect
-import io.github.terslenk.spellengine.basic.AmplifyModifier
-import io.github.terslenk.spellengine.basic.AoeModifier
-import io.github.terslenk.spellengine.basic.ExtendModifier
-import io.github.terslenk.spellengine.basic.PierceModifier
-import io.github.terslenk.spellengine.basic.AreaShape
-import io.github.terslenk.spellengine.basic.ProjectileShape
-import io.github.terslenk.spellengine.basic.RayShape
-import io.github.terslenk.spellengine.basic.SelfShape
 import io.github.terslenk.spellengine.advanced.AdvancedInstruction
 import io.github.terslenk.spellengine.advanced.AdvancedSpell
-import io.github.terslenk.spellengine.basic.BasicSpell
-import io.github.terslenk.spellengine.basic.Effect
-import io.github.terslenk.spellengine.basic.Modifier
-import io.github.terslenk.spellengine.basic.Shape
+import io.github.terslenk.spellengine.advanced.instructions.*
+import io.github.terslenk.spellengine.basic.*
 import xyz.xenondevs.nova.initialize.Init
 import xyz.xenondevs.nova.initialize.InitFun
 import xyz.xenondevs.nova.initialize.InitStage
@@ -147,34 +112,58 @@ object SpellRegistry {
         // Basic -- Modifiers
         registerModifier(AmplifyModifier)
         registerModifier(AoeModifier)
-        registerModifier(ExtendModifier)
+                registerModifier(ExtendModifier)
         registerModifier(PierceModifier)
+        registerModifier(ItemFilterModifier)
+        registerModifier(MobFilterModifier)
 
-        // Advanced -- Stack
-        registerInstruction(DupInstruction)
+                // Advanced -- Stack
         registerInstruction(DropInstruction)
+        registerInstruction(DupInstruction)
         registerInstruction(SwapInstruction)
+        registerInstruction(FilterItemsInstruction)
+        registerInstruction(FilterMobsInstruction)
+        registerInstruction(PrintStackInstruction)
 
         // Advanced -- Math
         registerInstruction(AddInstruction)
         registerInstruction(SubtractInstruction)
         registerInstruction(MultiplyInstruction)
         registerInstruction(DivideInstruction)
-        registerInstruction(AbsInstruction)
+                registerInstruction(AbsInstruction)
+
+        listOf(1.0, 2.0, 3.0, 4.0, 5.0, 10.0).forEach { registerInstruction(PushNumberInstruction(it)) }
 
         // Advanced -- Entity
         registerInstruction(GetCasterInstruction)
         registerInstruction(GetEntityPosInstruction)
+        registerInstruction(GetEntityEyePosInstruction)
         registerInstruction(GetLookedAtEntityInstruction)
-        registerInstruction(DamageEntityInstruction)
+                registerInstruction(DamageEntityInstruction)
         registerInstruction(HealEntityInstruction)
         registerInstruction(TeleportEntityInstruction)
-
+        registerInstruction(GetEntitiesInRadiusInstruction)
+        registerInstruction(IgniteEntityInstruction)
+                
         // Advanced -- World
         registerInstruction(GetLookDirectionInstruction)
         registerInstruction(OffsetVectorInstruction)
         registerInstruction(ScaleVectorInstruction)
+        registerInstruction(ConstructVectorInstruction)
+        registerInstruction(GetLookedAtBlockInstruction)
         registerInstruction(ExplodeInstruction)
-        CardinalDirection.entries.forEach { registerInstruction(PushVectorInstruction(it)) }
-    }
+        registerInstruction(RaycastBlockInstruction)
+        registerInstruction(BreakBlockInstruction)
+            }
 }
+
+
+
+
+
+
+
+
+
+
+

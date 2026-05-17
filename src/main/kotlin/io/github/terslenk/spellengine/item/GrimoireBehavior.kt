@@ -26,7 +26,7 @@ object GrimoireBehavior : ItemBehavior {
         val player = ctx[ItemUse.SOURCE_PLAYER] ?: return InteractionResult.Pass
 
         if (player.isSneaking) {
-            GrimoireGui(player, itemStack).open()
+            val slot = if (player.inventory.itemInOffHand == itemStack) org.bukkit.inventory.EquipmentSlot.OFF_HAND else org.bukkit.inventory.EquipmentSlot.HAND; GrimoireGui(player, itemStack, slot).open()
             return InteractionResult.Success(true)
         }
 

@@ -2,6 +2,7 @@ package io.github.terslenk.spellengine.basic
 
 import io.github.terslenk.spellengine.core.SpellContext
 import io.github.terslenk.spellengine.core.SpellResult
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Entity
 import org.bukkit.entity.LivingEntity
 
@@ -13,7 +14,7 @@ object DamageEffect : Effect {
 
     override fun apply(ctx: SpellContext, target: Entity, params: BasicSpellParams): SpellResult {
         val living = target as? LivingEntity
-            ?: return SpellResult.Mishap("Damage can only be applied to living entities.")
+            ?: return SpellResult.Success
 
         if (living == ctx.caster) {
             return SpellResult.Mishap("You cannot damage yourself with this spell.")
@@ -32,9 +33,9 @@ object HealEffect : Effect {
 
     override fun apply(ctx: SpellContext, target: Entity, params: BasicSpellParams): SpellResult {
         val living = target as? LivingEntity
-            ?: return SpellResult.Mishap("Heal can only be applied to living entities.")
+            ?: return SpellResult.Success
 
-        living.health = (living.health + 6.0 * params.power).coerceAtMost(living.maxHealth)
+        living.health = (living.health + 6.0 * params.power).coerceAtMost(living.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0)
         return SpellResult.Success
     }
 }
@@ -107,3 +108,5 @@ object PushEffect : Effect {
         return SpellResult.Success
     }
 }
+
+

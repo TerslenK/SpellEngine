@@ -14,7 +14,7 @@ import io.github.terslenk.spellengine.core.SpellResult
  * Each item in the GUI with this instruction carries its own [value].
  */
 data class PushNumberInstruction(val value: Double) : AdvancedInstruction {
-    override val id = "push_number"
+    override val id = "stack_push_number_${value.toInt()}"
     override val displayName = "Push Number ($value)"
     override val description = "Pushes the number $value onto the stack."
 
@@ -64,6 +64,50 @@ object SwapInstruction : AdvancedInstruction {
         val b = stack.pop().getOrElse { return SpellResult.Mishap(it.message!!) }
         stack.push(a)
         stack.push(b)
+        return SpellResult.Success
+    }
+}
+
+
+// ¦¦¦ Filter Items ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+
+object FilterItemsInstruction : AdvancedInstruction {
+    override val id = "stack_filter_items"
+    override val displayName = "Filter Items"
+    override val description = "Pops a List. Pushes a new List containing only the item entities."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val list = stack.popList().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val filtered = list.items.filter { it is Iota.EntityIota && it.entity is org.bukkit.entity.Item }
+        stack.push(Iota.ListIota(filtered))
+        return SpellResult.Success
+    }
+}
+
+// ¦¦¦ Filter Mobs ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+
+object FilterMobsInstruction : AdvancedInstruction {
+    override val id = "stack_filter_mobs"
+    override val displayName = "Filter Mobs"
+    override val description = "Pops a List. Pushes a new List containing only the living entities."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val list = stack.popList().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val filtered = list.items.filter { it is Iota.EntityIota && it.entity is org.bukkit.entity.LivingEntity }
+        stack.push(Iota.ListIota(filtered))
+        return SpellResult.Success
+    }
+}
+
+// ¦¦¦ Print Stack ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+
+object PrintStackInstruction : AdvancedInstruction {
+    override val id = "stack_print"
+    override val displayName = "Print Stack"
+    override val description = "Prints the current state of the stack to your chat. Useful for debugging!"
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        ctx.caster.sendMessage(net.kyori.adventure.text.Component.text("Stack: $stack", net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE))
         return SpellResult.Success
     }
 }

@@ -24,14 +24,22 @@ object BasicSpellExecutor {
         }
 
         // 3. Expand to AoE targets if the modifier is active
-        val targets: List<Entity> = if (params.aoe) {
+                val rawTargets: List<Entity> = if (params.aoe) {
             ctx.targets.flatMap { origin ->
                 origin.world
                     .getNearbyEntities(origin.location, params.radius, params.radius, params.radius)
-                    .filter { it is LivingEntity && it != ctx.caster }
+                    .filter { it != ctx.caster }
             }.distinct()
         } else {
             ctx.targets.toList()
+        }
+
+        val targets = rawTargets.filter { target ->
+            when (params.targetType) {
+                "LIVING" -> target is LivingEntity
+                "ITEM" -> target is org.bukkit.entity.Item
+                else -> true
+            }
         }
 
         if (targets.isEmpty()) {

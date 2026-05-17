@@ -106,3 +106,77 @@ object ExplodeInstruction : AdvancedInstruction {
         return SpellResult.Success
     }
 }
+
+
+// ��� Raycast Block ������������������������������������������������������������
+
+object RaycastBlockInstruction : AdvancedInstruction {
+    override val id = "world_raycast_block"
+    override val displayName = "Raycast Block"
+    override val description = "Pops Vector(start), Vector(dir), Number(dist). Pushes Vector of the hit block."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val dist = stack.popNumber().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val dir = stack.popVector().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val start = stack.popVector().getOrElse { return SpellResult.Mishap(it.message!!) }
+
+        val trace = ctx.world.rayTraceBlocks(start.value.toLocation(ctx.world), dir.value.normalize(), dist.value, org.bukkit.FluidCollisionMode.NEVER, true)
+        val hitBlock = trace?.hitBlock
+            ?: return SpellResult.Mishap("Raycast missed all blocks.")
+
+        stack.push(Iota.VectorIota(hitBlock.location.toVector()))
+        return SpellResult.Success
+    }
+}
+
+// ��� Break Block ��������������������������������������������������������������
+
+object BreakBlockInstruction : AdvancedInstruction {
+    override val id = "world_break_block"
+    override val displayName = "Break Block"
+    override val description = "Pops a Vector, breaks the block at that position naturally."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val pos = stack.popVector().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val block = ctx.world.getBlockAt(pos.value.toLocation(ctx.world))
+        if (block.type == org.bukkit.Material.BEDROCK || block.type == org.bukkit.Material.END_PORTAL_FRAME) {
+            return SpellResult.Mishap("Cannot break indestructible block.")
+        }
+        block.breakNaturally()
+        return SpellResult.Success
+    }
+}
+
+// ��� Construct Vector ���������������������������������������������������������
+
+object ConstructVectorInstruction : AdvancedInstruction {
+    override val id = "world_construct_vector"
+    override val displayName = "Construct Vector"
+    override val description = "Pops Z, Y, X numbers. Pushes a new Vector(X, Y, Z)."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val z = stack.popNumber().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val y = stack.popNumber().getOrElse { return SpellResult.Mishap(it.message!!) }
+        val x = stack.popNumber().getOrElse { return SpellResult.Mishap(it.message!!) }
+
+        stack.push(Iota.VectorIota(Vector(x.value, y.value, z.value)))
+        return SpellResult.Success
+    }
+}
+
+// ��� Get Looked At Block ������������������������������������������������������
+
+object GetLookedAtBlockInstruction : AdvancedInstruction {
+    override val id = "world_get_looked_at_block"
+    override val displayName = "Get Looked At Block"
+    override val description = "Pushes the Vector of the block the caster is currently looking at."
+
+    override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
+        val block = ctx.caster.getTargetBlockExact(100, org.bukkit.FluidCollisionMode.NEVER)
+            ?: return SpellResult.Mishap("No block in your line of sight within 100 blocks.")
+        
+        stack.push(Iota.VectorIota(block.location.toVector()))
+        return SpellResult.Success
+    }
+}
+
