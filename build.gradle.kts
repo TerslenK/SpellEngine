@@ -1,4 +1,4 @@
-group = "com.example" // TODO: Change this to your group
+group = "io.github.terslenk.spellengine" // TODO: Change this to your group
 version = "1.0-SNAPSHOT" // TODO: Change this to your addon version
 
 plugins {
@@ -19,7 +19,7 @@ dependencies {
 addon {
     name = project.name.replaceFirstChar(Char::uppercase)
     version = project.version.toString()
-    main = "com.example.ExampleAddon" // TODO: Change this to your main class
+    main = "io.github.terslenk.spellengine.SpellEngine" // TODO: Change this to your main class
     
     // output directory for the generated addon jar is read from the "outDir" project property (-PoutDir="...")
     val outDir = project.findProperty("outDir")
