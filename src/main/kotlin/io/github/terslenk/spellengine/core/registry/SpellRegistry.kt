@@ -40,7 +40,15 @@ object SpellRegistry {
     fun getShape(id: String)       = shapes[id]
     fun getEffect(id: String)      = effects[id]
     fun getModifier(id: String)    = modifiers[id]
-    fun getInstruction(id: String) = instructions[id]
+    fun getInstruction(id: String): AdvancedInstruction? {
+        val inst = instructions[id]
+        if (inst != null) return inst
+        if (id.startsWith("stack_push_number_")) {
+            val num = id.substringAfter("stack_push_number_").toDoubleOrNull()
+            if (num != null) return PushNumberInstruction(num)
+        }
+        return null
+    }
 
     fun allShapes()       = shapes.values.toList()
     fun allEffects()      = effects.values.toList()
@@ -70,7 +78,7 @@ object SpellRegistry {
      * Unknown IDs are silently skipped (so old spells don't crash on reload).
      */
     fun deserializeAdvanced(ids: List<String>): AdvancedSpell {
-        return AdvancedSpell(ids.mapNotNull { instructions[it] })
+        return AdvancedSpell(ids.mapNotNull { getInstruction(it) })
     }
 
     /**

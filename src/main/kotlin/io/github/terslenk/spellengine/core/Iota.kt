@@ -24,4 +24,13 @@ sealed class Iota {
         is ListIota   -> "List"
         is NullIota   -> "Null"
     }
+
+    fun asString(): String = when (this) {
+        is NumberIota -> if (value % 1.0 == 0.0) value.toLong().toString() else String.format(java.util.Locale.US, "%.2f", value)
+        is VectorIota -> "(${String.format(java.util.Locale.US, "%.2f", value.x)}, ${String.format(java.util.Locale.US, "%.2f", value.y)}, ${String.format(java.util.Locale.US, "%.2f", value.z)})"
+        is EntityIota -> entity.name
+        is BoolIota   -> value.toString()
+        is ListIota   -> items.joinToString(prefix = "[", postfix = "]") { it.asString() }
+        is NullIota   -> "Null"
+    }
 }

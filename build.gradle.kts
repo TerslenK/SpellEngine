@@ -32,3 +32,8 @@ java {
         languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
+
+tasks.register<JavaExec>("runReflect") {
+    mainClass.set("test.TestKt")
+    classpath(sourceSets.main.get().runtimeClasspath)
+}

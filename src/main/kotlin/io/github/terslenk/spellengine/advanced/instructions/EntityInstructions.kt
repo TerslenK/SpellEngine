@@ -52,12 +52,18 @@ object GetLookedAtEntityInstruction : AdvancedInstruction {
     override val description = "Pushes the entity you're looking at onto the stack."
 
     override fun execute(ctx: SpellContext, stack: SpellStack): SpellResult {
-        val target = ctx.caster.getTargetEntity(100, false)
+        val eyeLoc = ctx.caster.eyeLocation
+        val rayTrace = ctx.caster.world.rayTraceEntities(
+            eyeLoc,
+            eyeLoc.direction,
+            100.0,
+            1.5 // raySize - makes it a thick raycast so you don't have to be spot on
+        ) { it != ctx.caster }
+
+        val target = rayTrace?.hitEntity
             ?: return SpellResult.Mishap("No entity in your line of sight within 100 blocks.")
 
-        val hit = target
-
-        stack.push(Iota.EntityIota(hit))
+        stack.push(Iota.EntityIota(target))
         return SpellResult.Success
     }
 }

@@ -14,7 +14,7 @@ import xyz.xenondevs.invui.window.AnvilWindow
 
 object AnvilInputManager {
     fun prompt(player: Player, slot: EquipmentSlot) {
-        var currentText = ""
+        var currentText = "0"
         val confirmItem = Item.builder()
             .setItemProvider(ItemBuilder(Material.LIME_DYE).setName("<green><bold>Confirm Number").addLoreLines("<gray>Click to save custom number."))
             .addClickHandler { click ->

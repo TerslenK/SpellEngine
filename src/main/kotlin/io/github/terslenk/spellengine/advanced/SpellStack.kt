@@ -45,7 +45,7 @@ class SpellStack {
     fun popBool()    = popTyped<Iota.BoolIota>("Boolean")
     fun popList()    = popTyped<Iota.ListIota>("List")
 
-    override fun toString() = items.joinToString(prefix = "[", postfix = "]") { it.typeName() }
+    override fun toString() = items.joinToString(prefix = "[", postfix = "]") { it.asString() }
 }
 
 // ─── Exception types (converted to SpellResult.Mishap by the executor) ────────

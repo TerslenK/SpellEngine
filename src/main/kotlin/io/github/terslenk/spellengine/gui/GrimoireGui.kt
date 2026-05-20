@@ -21,6 +21,17 @@ class GrimoireGui(private val player: Player, private val grimoireItem: ItemStac
 
     private val currentInstructions = mutableListOf<AdvancedInstruction>()
     private var sequencePage = 0
+    private var instructionPage = 0
+
+    private lateinit var instructionItems: Array<Item>
+    private lateinit var instPrevItem: Item
+    private lateinit var instNextItem: Item
+
+    private fun notifyInstructions() {
+        if (::instructionItems.isInitialized) instructionItems.forEach { it.notifyWindows() }
+        if (::instPrevItem.isInitialized) instPrevItem.notifyWindows()
+        if (::instNextItem.isInitialized) instNextItem.notifyWindows()
+    }
 
     private val simulatedStacks = mutableListOf<String>()
 
@@ -111,6 +122,25 @@ class GrimoireGui(private val player: Player, private val grimoireItem: ItemStac
         if (::seqNextItem.isInitialized) seqNextItem.notifyWindows()
     }
 
+    private fun saveToItem() {
+        val meta = grimoireItem.itemMeta
+        if (meta != null) {
+            val ids = currentInstructions.joinToString(",") { it.id }
+            meta.persistentDataContainer.set(SpellKeys.SPELL_IDS, PersistentDataType.STRING, ids)
+            
+            val lore = mutableListOf<Component>()
+            lore.add(Component.text("Instructions:", NamedTextColor.GRAY))
+            currentInstructions.forEach {
+                lore.add(Component.text("- ${it.displayName}", NamedTextColor.AQUA))
+            }
+            meta.lore(lore)
+            grimoireItem.setItemMeta(meta)
+
+            if (slot == EquipmentSlot.OFF_HAND) player.inventory.setItemInOffHand(grimoireItem) else player.inventory.setItemInMainHand(grimoireItem)
+            player.updateInventory()
+        }
+    }
+
     fun open() {
         seqPrevItem = Item.builder()
             .setItemProvider {
@@ -138,23 +168,8 @@ class GrimoireGui(private val player: Player, private val grimoireItem: ItemStac
 
         val saveItem = Item.builder()
             .setItemProvider(ItemBuilder(Material.LIME_DYE).setName("<green><bold>Save & Close"))
-            .addClickHandler { click ->
-                val meta = grimoireItem.itemMeta
-                if (meta != null) {
-                    val ids = currentInstructions.joinToString(",") { it.id }
-                    meta.persistentDataContainer.set(SpellKeys.SPELL_IDS, PersistentDataType.STRING, ids)
-                    
-                    val lore = mutableListOf<Component>()
-                    lore.add(Component.text("Instructions:", NamedTextColor.GRAY))
-                    currentInstructions.forEach {
-                        lore.add(Component.text("- ${it.displayName}", NamedTextColor.AQUA))
-                    }
-                    meta.lore(lore)
-                    grimoireItem.setItemMeta(meta)
-
-                    if (slot == EquipmentSlot.OFF_HAND) player.inventory.setItemInOffHand(grimoireItem) else player.inventory.setItemInMainHand(grimoireItem)
-                    player.updateInventory()
-                }
+            .addClickHandler { _ ->
+                saveToItem()
                 player.closeInventory()
             }
             .build()
@@ -168,21 +183,34 @@ class GrimoireGui(private val player: Player, private val grimoireItem: ItemStac
             }
             .build()
 
-        val back: BoundItem = BoundItem.pagedBuilder()
-            .setItemProvider(ItemBuilder(Material.ARROW).setName("<yellow>Previous Page (Instructions)"))
-            .addClickHandler { _, gui, _ -> gui.page-- }
+        instPrevItem = Item.builder()
+            .setItemProvider {
+                if (instructionPage > 0) ItemBuilder(Material.ARROW).setName("<yellow>Previous Page (Instructions)")
+                else ItemBuilder(Material.AIR)
+            }
+            .addClickHandler { _ ->
+                if (instructionPage > 0) {
+                    instructionPage--
+                    notifyInstructions()
+                }
+            }
             .build()
 
-        val forward: BoundItem = BoundItem.pagedBuilder()
-            .setItemProvider(ItemBuilder(Material.ARROW).setName("<yellow>Next Page (Instructions)"))
-            .addClickHandler { _, gui, _ -> gui.page++ }
+        instNextItem = Item.builder()
+            .setItemProvider {
+                // Not sure if there are more pages without the total size, so we'll check it in a sec
+                ItemBuilder(Material.ARROW).setName("<yellow>Next Page (Instructions)")
+            }
+            .addClickHandler { _ ->
+                // Handled below
+            }
             .build()
 
-                        val groups = SpellRegistry.allInstructions()
+        val groups = SpellRegistry.allInstructions()
             .sortedBy { it.id }
             .groupBy { it.id.substringBefore("_") }
 
-        val allInstructions = mutableListOf<Item>()
+        val allInstructions = mutableListOf<Pair<xyz.xenondevs.invui.item.ItemProvider, AdvancedInstruction?>>()
         for ((category, insts) in groups) {
             val catColor = when (category) {
                 "math" -> "<green>"
@@ -201,69 +229,97 @@ class GrimoireGui(private val player: Player, private val grimoireItem: ItemStac
             val catName = category.replaceFirstChar { it.uppercase() }
 
             insts.forEach { inst ->
-                allInstructions.add(
-                    Item.builder()
-                        .setItemProvider(
-                            ItemBuilder(catMat)
-                                .setName("$catColor<bold>${inst.displayName}")
-                                .addLoreLines(
-                                    "<dark_gray>Category: $catName",
-                                    "",
-                                    "<gray>${inst.description}",
-                                    "",
-                                    "<yellow>Click to add to sequence"
-                                )
-                        )
-                        .addClickHandler { click ->
+                val provider = ItemBuilder(catMat)
+                    .setName("$catColor<bold>${inst.displayName}")
+                    .addLoreLines(
+                        "<dark_gray>Category: $catName",
+                        "",
+                        "<gray>${inst.description}",
+                        "",
+                        "<yellow>Click to add to sequence"
+                    )
+                allInstructions.add(Pair(provider, inst))
+            }
+            
+            // Pad the rest of the row with panes so the next category starts on a new line
+            val remainder = allInstructions.size % 27
+            if (remainder > 0) {
+                for (i in 0 until (27 - remainder)) {
+                    val pad = ItemBuilder(Material.AIR)
+                    allInstructions.add(Pair(pad, null))
+                }
+            }
+        }
+
+        // Redefine next item now that we know total size
+        instNextItem = Item.builder()
+            .setItemProvider {
+                if ((instructionPage + 1) * 27 < allInstructions.size) ItemBuilder(Material.ARROW).setName("<yellow>Next Page (Instructions)")
+                else ItemBuilder(Material.AIR)
+            }
+            .addClickHandler { _ ->
+                if ((instructionPage + 1) * 27 < allInstructions.size) {
+                    instructionPage++
+                    notifyInstructions()
+                }
+            }
+            .build()
+
+        instructionItems = Array(27) { idx ->
+            Item.builder()
+                .setItemProvider {
+                    val pageIdx = instructionPage * 27 + idx
+                    if (pageIdx < allInstructions.size) {
+                        allInstructions[pageIdx].first
+                    } else {
+                        ItemBuilder(Material.AIR)
+                    }
+                }
+                .addClickHandler { _ ->
+                    val pageIdx = instructionPage * 27 + idx
+                    if (pageIdx < allInstructions.size) {
+                        val inst = allInstructions[pageIdx].second
+                        if (inst != null) {
                             currentInstructions.add(inst)
                             if (currentInstructions.size > (sequencePage + 1) * 9) {
                                 sequencePage = (currentInstructions.size - 1) / 9
                             }
                             notifySequence()
                         }
-                        .build()
-                )
-            }
-            
-            // Pad the rest of the row with AIR so the next category starts on a new line
-            val remainder = allInstructions.size % 27
-            if (remainder > 0) {
-                for (i in 0 until (27 - remainder)) {
-                    allInstructions.add(Item.builder().setItemProvider(ItemBuilder(Material.AIR)).build())
+                    }
                 }
-            }
+                .build()
         }
 
-                val customNumberItem = Item.builder()
-            .setItemProvider(ItemBuilder(Material.WRITABLE_BOOK).setName("<gold><bold>Custom Number").addLoreLines("<gray>Click to type a custom number", "<gray>in chat to push onto the stack."))
-            .addClickHandler { click ->
+        val customNumberItem = Item.builder()
+            .setItemProvider(ItemBuilder(Material.WRITABLE_BOOK).setName("<gold><bold>Custom Number").addLoreLines("<gray>Click to type a custom number", "<gray>in an anvil to push onto the stack."))
+            .addClickHandler { _ ->
+                saveToItem()
                 AnvilInputManager.prompt(player, slot)
             }
             .build()
 
-        val builder = PagedGui.itemsBuilder()
-            .setStructure(
-                "0 1 2 3 4 5 6 7 8",
-                "[ n c . s . . . ]",
-                "x x x x x x x x x",
-                "x x x x x x x x x",
-                "x x x x x x x x x",
-                "# # # < # > # # #"
-            )
-            .addIngredient('#', Item.simple(ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setName(" ")))
-            .addIngredient('.', Item.simple(ItemBuilder(Material.AIR)))
-            .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
-            .addIngredient('[', seqPrevItem)
-            .addIngredient(']', seqNextItem)
-            .addIngredient('c', clearItem)
-            .addIngredient('s', saveItem)
-            .addIngredient('<', back)
-            .addIngredient('>', forward)
-            
-        sequenceItems.forEachIndexed { i, item -> builder.addIngredient(i.toString()[0], item) }
-            
-        val gui = builder.addIngredient('n', customNumberItem)
-        builder.setContent(allInstructions).build()
+        val gui = xyz.xenondevs.invui.gui.Gui.empty(9, 6)
+
+        sequenceItems.forEachIndexed { i, item -> gui.setItem(i, item) }
+        gui.setItem(9, seqPrevItem)
+        gui.setItem(10, customNumberItem)
+        gui.setItem(11, clearItem)
+        gui.setItem(13, saveItem)
+        gui.setItem(17, seqNextItem)
+        gui.setItem(48, instPrevItem)
+        gui.setItem(50, instNextItem)
+        
+        for (i in 0 until 27) {
+            gui.setItem(18 + i, instructionItems[i])
+        }
+        
+        val pad = Item.simple(ItemBuilder(Material.AIR))
+        for (i in 0 until 54) {
+            if (gui.getItem(i) == null) {
+                gui.setItem(i, pad)
+            }
+        }
 
         Window.builder()
             .setTitle("<dark_purple><bold>Edit Grimoire")
